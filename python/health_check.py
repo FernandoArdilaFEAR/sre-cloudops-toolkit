@@ -1,24 +1,36 @@
 #!/usr/bin/env python3
 """
-Endpoint Health Checker
-Pings a list of URLs, reports HTTP status and response time.
-Usage: python health_check.py --endpoints https://example.com,https://api.example.com
+Endpoint Health Checker – monitors a predefined list of URLs.
+Just run: python health_check.py
+Edit the ENDPOINTS list below to change the targets.
 """
 
-import argparse
 import logging
 import sys
 import time
 import requests
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+# ====== CONFIGURE YOUR ENDPOINTS HERE ======
+ENDPOINTS = [
+    "https://www.google.com",
+    "https://api.github.com",
+    "https://jsonplaceholder.typicode.com/todos/1",
+    # Add more URLs as needed
+]
+# ==========================================
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 def check_endpoint(url, timeout=5):
+    """Ping a single URL and log the result."""
     try:
         start = time.time()
         resp = requests.get(url, timeout=timeout)
-        elapsed = (time.time() - start) * 1000  # ms
+        elapsed = (time.time() - start) * 1000  # milliseconds
         status = "UP" if resp.status_code == 200 else f"DOWN ({resp.status_code})"
         logger.info(f"{url}: {status} | {elapsed:.0f}ms")
         return resp.status_code == 200
@@ -27,13 +39,12 @@ def check_endpoint(url, timeout=5):
         return False
 
 def main():
-    parser = argparse.ArgumentParser(description="HTTP endpoint health checker")
-    parser.add_argument("--endpoints", required=True, help="Comma‑separated list of URLs")
-    args = parser.parse_args()
+    if not ENDPOINTS:
+        logger.warning("No endpoints configured. Exiting.")
+        sys.exit(0)
 
-    urls = [u.strip() for u in args.endpoints.split(",")]
     all_healthy = True
-    for url in urls:
+    for url in ENDPOINTS:
         if not check_endpoint(url):
             all_healthy = False
 
