@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 """
-Log Parser – analyses log files for top error patterns.
-Usage: python log_parser.py /var/log/app.log
+Log Parser – analyses a log file for top ERROR patterns.
+Default file: app.log
+Usage:
+    python log_parser.py                    # uses app.log
+    python log_parser.py /path/to/other.log # uses a different file
 """
 
 import re
 import sys
 from collections import Counter
+
+# Default log file location
+DEFAULT_LOG = "app.log"
 
 ERROR_PATTERN = re.compile(r"ERROR\s+(.*)")
 
@@ -17,6 +23,9 @@ def parse_log(filepath):
     except FileNotFoundError:
         print(f"Error: file not found – {filepath}", file=sys.stderr)
         sys.exit(1)
+    except PermissionError:
+        print(f"Error: permission denied – {filepath}", file=sys.stderr)
+        sys.exit(1)
 
     errors = []
     for line in lines:
@@ -24,13 +33,17 @@ def parse_log(filepath):
         if match:
             errors.append(match.group(1).strip())
 
+    if not errors:
+        print("No ERROR entries found.")
+        return
+
     counter = Counter(errors)
     print("Top 10 Errors:")
-    for error, count in counter.most_common(10):
-        print(f"  {count:4d}  {error}")
+        
+    for i, (error, count) in enumerate(counter.most_common(10), start=1):
+        print(f"{i:2d}.  {error}")
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python log_parser.py <logfile>", file=sys.stderr)
-        sys.exit(1)
-    parse_log(sys.argv[1])
+    # Use argument if provided, otherwise default
+    filepath = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_LOG
+    parse_log(filepath)
